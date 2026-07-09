@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#2563EB">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="后厨计算器">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" href="/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="/icon-192.png">
+  <title>后厨计算器</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+  <!-- Toast -->
+  <div id="toast" class="toast"></div>
+
+  <!-- 首页 -->
+  <div id="page-home" class="page active">
+    <div class="page-content">
+      <div class="search-bar">
+        <input class="search-input" id="search-input" placeholder="🔍 搜索菜品名称..." oninput="onSearch()" />
+      </div>
+      <div class="stats-row">
+        <div class="stat-card"><div class="stat-value" id="stat-total">0</div><div class="stat-label">菜品总数</div></div>
+        <div class="stat-card"><div class="stat-value" id="stat-avg">0%</div><div class="stat-label">平均毛利率</div></div>
+        <div class="stat-card"><div class="stat-value" id="stat-high">0</div><div class="stat-label">高毛利(≥60%)</div></div>
+      </div>
+      <div class="filter-bar">
+        <select class="filter-select" onchange="onSortChange(this.value)">
+          <option value="default">默认排序</option>
+          <option value="margin-desc">毛利率 ↓</option>
+          <option value="margin-asc">毛利率 ↑</option>
+        </select>
+        <input class="filter-price" type="number" placeholder="最低价" oninput="onMinPrice(this.value)" />
+        <span style="line-height:36px;color:#999">—</span>
+        <input class="filter-price" type="number" placeholder="最高价" oninput="onMaxPrice(this.value)" />
+      </div>
+      <div id="dish-list"><div class="empty-state"><div class="empty-icon">📋</div><div class="empty-text">暂无菜品数据，去录入页添加吧</div></div></div>
+    </div>
+  </div>
+
+  <!-- 录入页 -->
+  <div id="page-add" class="page">
+    <div class="page-content" id="add-page-content"></div>
+  </div>
+
+  <!-- 计算器页 -->
+  <div id="page-calc" class="page">
+    <div class="page-content">
+      <!-- 计算器1：出成率换算 -->
+      <div class="calc-card">
+        <div class="calc-title">🧮 出成率换算</div>
+        <div class="calc-field">
+          <label class="calc-label">原材料价格（元/斤）</label>
+          <input class="calc-input" id="calc1-price" type="number" step="0.01" min="0" placeholder="如：25" oninput="onCalc1Input()" />
+        </div>
+        <div class="calc-field">
+          <label class="calc-label">需要克重（g）</label>
+          <input class="calc-input" id="calc1-weight" type="number" step="0.1" min="0" placeholder="如：300" oninput="onCalc1Input()" />
+        </div>
+        <div class="calc-field">
+          <label class="calc-label">出成率（%）</label>
+          <input class="calc-input" id="calc1-yield" type="number" step="0.1" min="0" max="100" placeholder="默认100" value="100" oninput="onCalc1Input()" />
+        </div>
+        <div class="calc-result">实际成本：<span id="calc1-result">—</span></div>
+      </div>
+
+      <!-- 计算器2：毛利率计算 -->
+      <div class="calc-card">
+        <div class="calc-title">📊 毛利率计算</div>
+        <div class="calc-field">
+          <label class="calc-label">售价（元）</label>
+          <input class="calc-input" id="calc2-price" type="number" step="0.01" min="0" placeholder="如：68" oninput="onCalc2Input()" />
+        </div>
+        <div class="calc-field">
+          <label class="calc-label">单份成本（元）</label>
+          <input class="calc-input" id="calc2-cost" type="number" step="0.01" min="0" placeholder="如：25" oninput="onCalc2Input()" />
+        </div>
+        <div class="calc-result">毛利率：<span id="calc2-result">—</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 底部导航 -->
+  <div class="tab-bar">
+    <button class="tab-item active" data-tab="home" onclick="switchTab('home')">
+      <span class="tab-icon">🏠</span>
+      <span class="tab-label">首页</span>
+    </button>
+    <button class="tab-item" data-tab="add" onclick="switchTab('add')">
+      <span class="tab-icon">📝</span>
+      <span class="tab-label">录入</span>
+    </button>
+    <button class="tab-item" data-tab="calc" onclick="switchTab('calc')">
+      <span class="tab-icon">🧮</span>
+      <span class="tab-label">计算器</span>
+    </button>
+  </div>
+
+  <script src="/js/types.js"></script>
+  <script src="/js/storage.js"></script>
+  <script src="/js/app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('/sw.js').then(function(reg) {
+          console.log('SW registered:', reg.scope);
+        }).catch(function(err) {
+          console.log('SW registration failed:', err);
+        });
+      });
+    }
+  </script>
+</body>
+</html>

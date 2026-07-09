@@ -1,0 +1,209 @@
+/* ============ 全局重置 ============ */
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; overflow: hidden; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background: #f5f7fa; color: #1a1a2e; font-size: 16px; line-height: 1.5;
+}
+
+/* ============ 底部导航 ============ */
+.tab-bar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  display: flex; height: 56px; background: #fff;
+  border-top: 1px solid #e8e8e8; z-index: 1000;
+}
+.tab-item {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; font-size: 11px; color: #999; cursor: pointer;
+  transition: color 0.2s; border: none; background: none; padding: 0;
+}
+.tab-item.active { color: #2563EB; }
+.tab-icon { font-size: 22px; margin-bottom: 2px; line-height: 1; }
+.tab-label { font-size: 10px; }
+
+/* ============ 页面容器 ============ */
+.page { display: none; height: 100vh; padding-bottom: 56px; overflow-y: auto; }
+.page.active { display: block; }
+.page-content { padding: 16px; padding-bottom: 100px; }
+
+/* ============ 首页表格 ============ */
+.search-bar { margin-bottom: 12px; }
+.search-input {
+  width: 100%; height: 44px; padding: 0 16px; border: 1px solid #ddd;
+  border-radius: 10px; font-size: 15px; outline: none; background: #fff;
+  transition: border-color 0.2s;
+}
+.search-input:focus { border-color: #2563EB; }
+
+.stats-row {
+  display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap;
+}
+.stat-card {
+  flex: 1; min-width: 80px; background: #fff; border-radius: 10px;
+  padding: 10px 12px; text-align: center;
+}
+.stat-value { font-size: 20px; font-weight: 700; color: #2563EB; }
+.stat-label { font-size: 12px; color: #999; margin-top: 2px; }
+
+.filter-bar {
+  display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;
+}
+.filter-select {
+  height: 36px; padding: 0 12px; border: 1px solid #ddd; border-radius: 8px;
+  font-size: 13px; background: #fff; outline: none; flex: 1; min-width: 80px;
+}
+.filter-price {
+  height: 36px; padding: 0 10px; border: 1px solid #ddd; border-radius: 8px;
+  font-size: 13px; outline: none; width: 80px;
+}
+
+.table-wrap { overflow-x: auto; border-radius: 10px; background: #fff; }
+table { width: 100%; border-collapse: collapse; min-width: 480px; }
+th { background: #f0f4ff; padding: 10px 8px; font-size: 12px; color: #666; text-align: left; white-space: nowrap; }
+td { padding: 10px 8px; font-size: 15px; border-bottom: 1px solid #f0f0f0; }
+tr:last-child td { border-bottom: none; }
+tr { cursor: pointer; transition: background 0.15s; }
+tr:hover { background: #f8faff; }
+.price-cell { font-size: 18px; font-weight: 700; }
+.margin-green { color: #16a34a; }
+.margin-red { color: #dc2626; }
+.margin-normal { color: #2563EB; }
+.dish-name { font-weight: 600; }
+
+/* ============ 录入页 - 卡片式区块 ============ */
+.form-section {
+  background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 16px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+.section-title {
+  font-size: 16px; font-weight: 700; color: #1a1a2e; margin-bottom: 16px;
+  padding-bottom: 10px; border-bottom: 2px solid #2563EB;
+}
+.field-group { margin-bottom: 14px; }
+.field-group:last-child { margin-bottom: 0; }
+.field-label {
+  display: block; font-size: 14px; color: #666; margin-bottom: 6px; font-weight: 500;
+}
+.form-input {
+  width: 100%; height: 44px; padding: 0 14px; border: 1px solid #ddd;
+  border-radius: 8px; font-size: 16px; outline: none; background: #fff;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.form-input:focus { border-color: #2563EB; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+
+/* ============ 原材料卡片 ============ */
+.ing-card {
+  background: #f8f9fb; border-radius: 10px; padding: 16px; margin-bottom: 16px;
+  border: 1px solid #eee;
+}
+.ing-field { margin-bottom: 12px; }
+.ing-field:last-of-type { margin-bottom: 0; }
+.ing-label {
+  display: block; font-size: 13px; color: #666; margin-bottom: 5px; font-weight: 500;
+}
+.ing-input {
+  width: 100%; height: 44px; padding: 0 12px; border: 1px solid #ddd;
+  border-radius: 8px; font-size: 15px; outline: none; background: #fff;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.ing-input:focus { border-color: #2563EB; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+
+.ing-price-row {
+  display: flex; gap: 8px; align-items: stretch;
+}
+.ing-price-input {
+  flex: 1; height: 44px; padding: 0 12px; border: 1px solid #ddd;
+  border-radius: 8px; font-size: 15px; outline: none; background: #fff;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.ing-price-input:focus { border-color: #2563EB; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+.ing-unit-select {
+  flex-shrink: 0; height: 44px; padding: 0 12px; border: 1px solid #ddd;
+  border-radius: 8px; font-size: 13px; background: #fff; color: #2563EB;
+  font-weight: 600; cursor: pointer; outline: none; transition: all 0.15s;
+}
+.ing-unit-select:active { background: #eff6ff; }
+
+.ing-card-footer {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 12px; padding-top: 10px; border-top: 1px solid #e0e0e0;
+}
+.ing-subtotal { font-size: 14px; color: #888; font-weight: 500; }
+.ing-delete {
+  background: none; border: none; color: #bbb; font-size: 18px;
+  cursor: pointer; padding: 4px 8px; border-radius: 6px; transition: all 0.2s;
+  line-height: 1;
+}
+.ing-delete:active { color: #dc2626; background: #fef2f2; }
+
+.add-ing-btn {
+  display: block; width: 100%; height: 44px; border: 1.5px dashed #2563EB;
+  border-radius: 10px; background: #f0f4ff; color: #2563EB;
+  font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+  margin-top: 4px;
+}
+.add-ing-btn:active { background: #dbeafe; }
+
+.total-cost-row {
+  text-align: right; margin-top: 8px; padding-top: 14px; font-size: 20px;
+  font-weight: 700; color: #2563EB; border-top: 2px solid #e0e0e0;
+}
+
+/* ============ 售价与利润区域 ============ */
+.profit-section {
+  background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 16px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+.profit-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.profit-label { font-size: 14px; color: #666; }
+.profit-value { font-size: 16px; font-weight: 700; }
+.profit-value.green { color: #16a34a; }
+.profit-value.red { color: #dc2626; }
+.profit-value.blue { color: #2563EB; }
+
+.save-btn {
+  width: 100%; height: 50px; background: #2563EB; color: #fff;
+  border: none; border-radius: 8px; font-size: 18px; font-weight: 700;
+  cursor: pointer; transition: all 0.2s; margin-top: 16px;
+}
+.save-btn:active { background: #1d4ed8; }
+
+/* ============ 计算器页 ============ */
+.calc-card {
+  background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 16px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+.calc-title { font-size: 16px; font-weight: 700; margin-bottom: 14px; color: #1a1a2e; }
+.calc-field { margin-bottom: 12px; }
+.calc-label { display: block; font-size: 13px; color: #666; margin-bottom: 4px; }
+.calc-input {
+  width: 100%; height: 44px; padding: 0 14px; border: 1px solid #ddd;
+  border-radius: 8px; font-size: 16px; outline: none; background: #fafafa;
+  transition: border-color 0.2s;
+}
+.calc-input:focus { border-color: #2563EB; background: #fff; }
+.calc-result {
+  margin-top: 12px; padding: 12px; background: #f0f4ff; border-radius: 8px;
+  font-size: 18px; font-weight: 700; color: #2563EB; text-align: center;
+}
+
+/* ============ Toast 提示 ============ */
+.toast {
+  position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+  background: #1a1a2e; color: #fff; padding: 12px 24px; border-radius: 10px;
+  font-size: 14px; z-index: 2000; opacity: 0; transition: opacity 0.3s;
+  pointer-events: none; white-space: nowrap;
+}
+.toast.show { opacity: 1; }
+
+/* ============ 空状态 ============ */
+.empty-state {
+  text-align: center; padding: 60px 20px; color: #bbb;
+}
+.empty-icon { font-size: 48px; margin-bottom: 12px; }
+.empty-text { font-size: 15px; }
+
+/* ============ 滚动条美化 ============ */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
