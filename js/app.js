@@ -15,6 +15,9 @@ function switchTab(tab) {
   if (tabEl) tabEl.classList.add('active');
   const pageEl = document.getElementById(`page-${tab}`);
   if (pageEl) pageEl.classList.add('active');
+  // 更新顶部导航标题
+  const titles = { home: '🏠 首页', add: '📝 录入菜品', calc: '🧮 计算器' };
+  document.getElementById('top-nav').textContent = titles[tab] || '后厨计算器';
   if (tab === 'home') renderHome();
   if (tab === 'add') renderAddPage();
 }
@@ -41,8 +44,8 @@ function renderHome() {
   if (maxV > 0) filtered = filtered.filter(d => d.sellingPrice <= maxV);
 
   // 排序
-  if (sortOrder === 'margin-asc') filtered.sort((a, b) => (calcMargin(a.sellingPrice, calcDish(a).totalCost) || 0) - (calcMargin(b.sellingPrice, calcDish(b).totalCost) || 0));
-  else if (sortOrder === 'margin-desc') filtered.sort((a, b) => (calcMargin(b.sellingPrice, calcDish(b).totalCost) || 0) - (calcMargin(a.sellingPrice, calcDish(a).totalCost) || 0));
+  if (sortOrder === 'margin-asc') filtered.sort((a, b) => (calcMargin(b.sellingPrice, calcDish(b).totalCost) || 0) - (calcMargin(a.sellingPrice, calcDish(a).totalCost) || 0));
+  else if (sortOrder === 'margin-desc') filtered.sort((a, b) => (calcMargin(a.sellingPrice, calcDish(a).totalCost) || 0) - (calcMargin(b.sellingPrice, calcDish(b).totalCost) || 0));
 
   // 统计
   const totalDishes = allDishes.length;
@@ -62,21 +65,22 @@ function renderHome() {
     return;
   }
 
-  let html = '<table><thead><tr><th>菜品名称</th><th>进货成本</th><th>出成率</th><th>售价</th><th>毛利率</th></tr></thead><tbody>';
+  let html = '';
   for (const d of filtered) {
     const calc = calcDish(d);
     const margin = calcMargin(d.sellingPrice, calc.totalCost);
-    const marginClass = margin >= 60 ? 'margin-green' : margin < 40 ? 'margin-red' : 'margin-normal';
-    const avgYield = calc.totalCost > 0 ? (calc.details.reduce((s, v) => s + v, 0) / Math.max(calc.details.length, 1)) : 0;
-    html += `<tr onclick="editDish('${d.id}')">
-      <td class="dish-name">${escHtml(d.name)}${d.spec ? `<span style="color:#999;font-size:12px;font-weight:400"> (${escHtml(d.spec)})</span>` : ''}</td>
-      <td class="price-cell">¥${calc.totalCost.toFixed(2)}</td>
-      <td>${avgYield > 0 ? (100).toFixed(0) + '%' : '-'}</td>
-      <td class="price-cell">¥${(parseFloat(d.sellingPrice) || 0).toFixed(2)}</td>
-      <td class="price-cell ${marginClass}">${margin.toFixed(1)}%</td>
-    </tr>`;
+    const marginClass = margin >= 60 ? 'margin-green' : margin < 40 ? 'margin-red' : 'margin-yellow';
+    const marginBg = margin >= 60 ? 'bg-green' : margin < 40 ? 'bg-red' : 'bg-yellow';
+    html += `<div class="dish-card" onclick="editDish('${d.id}')">
+      <div class="dish-card-left">
+        <div class="dish-card-name">${escHtml(d.name)}${d.spec ? `<span class="dish-card-spec">(${escHtml(d.spec)})</span>` : ''}</div>
+        <div class="dish-card-detail">成本 ¥${calc.totalCost.toFixed(2)} · 售价 ¥${(parseFloat(d.sellingPrice) || 0).toFixed(2)}</div>
+      </div>
+      <div class="dish-card-right">
+        <div class="margin-tag ${marginBg}">${margin.toFixed(1)}%</div>
+      </div>
+    </div>`;
   }
-  html += '</tbody></table>';
   list.innerHTML = html;
 }
 
@@ -132,23 +136,23 @@ function renderAddPage() {
     <div class="form-section">
       <div class="section-title">🥩 原材料</div>
       <div id="ingredients-container">
-        ${ingHtml || '<div style="text-align:center;padding:20px 0;color:#bbb;font-size:14px">暂无原材料，点击下方添加</div>'}
+        ${ingHtml || '<div class="empty-ing">暂无原材料，点击下方添加</div>'}
       </div>
       <button class="add-ing-btn" onclick="addIngredientRow()">＋ 添加材料</button>
-      <div class="total-cost-row">单份总成本：¥<span id="total-cost-display">${calc.totalCost.toFixed(2)}</span></div>
+      <div class="total-cost-row">单份总成本：<span class="total-cost-value">¥<span id="total-cost-display">${calc.totalCost.toFixed(2)}</span></span></div>
     </div>
 
     <!-- 区块3：售价与利润 -->
-    <div class="profit-section">
+    <div class="form-section">
       <div class="section-title">💰 售价与利润</div>
       <div class="field-group">
         <label class="field-label">售价（元）</label>
         <input class="form-input" id="selling-price" type="number" step="0.01" min="0"
           value="${dish.sellingPrice || ''}" placeholder="输入售价" oninput="onPriceInput()" />
       </div>
-      <div class="profit-row" style="margin-top:12px">
+      <div class="profit-row">
         <span class="profit-label">单份总成本</span>
-        <span class="profit-value blue">¥<span id="profit-cost">${calc.totalCost.toFixed(2)}</span></span>
+        <span class="profit-value" style="color:#333">¥<span id="profit-cost">${calc.totalCost.toFixed(2)}</span></span>
       </div>
       <div class="profit-row">
         <span class="profit-label">毛利率</span>
@@ -214,10 +218,8 @@ function renderIngredientCard(ing, idx) {
 function addIngredientRow() {
   const container = document.getElementById('ingredients-container');
   if (!container) return;
-  // 读取当前原材料
   const ingredients = readIngredients();
   ingredients.push(emptyIngredient());
-  // 重新渲染
   let html = '';
   for (let i = 0; i < ingredients.length; i++) {
     html += renderIngredientCard(ingredients[i], i);
@@ -236,7 +238,7 @@ function removeIngredientRow(idx) {
   for (let i = 0; i < ingredients.length; i++) {
     html += renderIngredientCard(ingredients[i], i);
   }
-  container.innerHTML = html || '<div style="text-align:center;padding:20px 0;color:#bbb;font-size:14px">暂无原材料，点击下方添加</div>';
+  container.innerHTML = html || '<div class="empty-ing">暂无原材料，点击下方添加</div>';
   updateCosts();
 }
 
@@ -246,11 +248,11 @@ function readIngredients() {
   const ingredients = [];
   cards.forEach(card => {
     const idx = parseInt(card.dataset.idx);
-    const name = card.querySelector('.ing-field:nth-child(1) .ing-input')?.value || '';
-    const weight = parseFloat(card.querySelector('.ing-field:nth-child(2) .ing-input')?.value) || 0;
+    const name = card.querySelector('input[placeholder="如：猪排骨"]')?.value || '';
+    const weight = parseFloat(card.querySelector('input[type="number"][step="0.1"]')?.value) || 0;
     const price = parseFloat(card.querySelector('.ing-price-input')?.value) || 0;
     const unit = card.querySelector('.ing-unit-select')?.value || 'jin';
-    const yieldRate = parseFloat(card.querySelector('.ing-field:nth-child(4) .ing-input')?.value) || 100;
+    const yieldRate = parseFloat(card.querySelectorAll('.ing-input')[3]?.value) || 100;
     ingredients.push({ name, weight, price, unit, yieldRate });
   });
   return ingredients;
@@ -258,7 +260,6 @@ function readIngredients() {
 
 // 材料输入事件
 function onIngInput(idx, field, value) {
-  const ingredients = readIngredients();
   updateCosts();
 }
 
@@ -271,11 +272,9 @@ function updateCosts() {
   const totalEl = document.getElementById('total-cost-display');
   if (totalEl) totalEl.textContent = calc.totalCost.toFixed(2);
 
-  // 更新售价区域的成本
   const costEl = document.getElementById('profit-cost');
   if (costEl) costEl.textContent = calc.totalCost.toFixed(2);
 
-  // 更新毛利率
   const price = parseFloat(document.getElementById('selling-price')?.value) || 0;
   const margin = calcMargin(price, calc.totalCost);
   const marginEl = document.getElementById('profit-margin');
@@ -286,10 +285,8 @@ function updateCosts() {
   }
 }
 
-// 菜品名称/规格输入
 function onDishInput() {}
 
-// 售价输入
 function onPriceInput() {
   updateCosts();
 }
@@ -298,71 +295,62 @@ function onPriceInput() {
 function handleSave() {
   const name = document.getElementById('dish-name')?.value?.trim();
   if (!name) {
-    showToast('请填写菜品名称');
-    document.getElementById('dish-name')?.focus();
+    showToast('请输入菜品名称');
     return;
   }
-
-  const ingredients = readIngredients();
-  if (ingredients.length === 0) {
-    showToast('请至少添加一种原材料');
-    return;
-  }
-
   const spec = document.getElementById('dish-spec')?.value?.trim() || '';
   const sellingPrice = parseFloat(document.getElementById('selling-price')?.value) || 0;
-
+  const ingredients = readIngredients();
   const dish = {
     id: editDishId || genId(),
     name,
     spec,
+    sellingPrice,
     ingredients,
-    sellingPrice
+    createdAt: editDishId ? undefined : Date.now(),
+    updatedAt: Date.now()
   };
-
   if (editDishId) {
-    updateDish(editDishId, dish);
-    showToast('✅ 更新成功');
+    updateDish(dish);
+    showToast('✅ 已更新');
   } else {
     addDish(dish);
     showToast('✅ 保存成功');
   }
-
   editDishId = null;
-  // 跳转到首页
   switchTab('home');
 }
 
-// ============ 计算器页 ============
-function renderCalculator() {
-  // 计算器1：出成率换算
-  const calcP = parseFloat(document.getElementById('calc1-price')?.value) || 0;
-  const calcW = parseFloat(document.getElementById('calc1-weight')?.value) || 0;
-  const calcY = parseFloat(document.getElementById('calc1-yield')?.value) || 100;
-  const calc1Result = (calcP > 0 && calcW > 0) ? (calcP * calcW / (calcY / 100) / 500).toFixed(2) : '—';
-  document.getElementById('calc1-result').textContent = calc1Result !== '—' ? '¥' + calc1Result : '—';
-
-  // 计算器2：毛利率计算
-  const calcS = parseFloat(document.getElementById('calc2-price')?.value) || 0;
-  const calcC = parseFloat(document.getElementById('calc2-cost')?.value) || 0;
-  const calc2Result = (calcS > 0 && calcC > 0) ? ((calcS - calcC) / calcS * 100).toFixed(1) + '%' : '—';
-  document.getElementById('calc2-result').textContent = calc2Result;
+// 计算器1：出成率换算
+function onCalc1Input() {
+  const price = parseFloat(document.getElementById('calc1-price')?.value) || 0;
+  const weight = parseFloat(document.getElementById('calc1-weight')?.value) || 0;
+  const yieldRate = parseFloat(document.getElementById('calc1-yield')?.value) || 100;
+  const result = document.getElementById('calc1-result');
+  if (price > 0 && weight > 0 && yieldRate > 0) {
+    const cost = (price / 500) * weight / (yieldRate / 100);
+    result.textContent = '¥' + cost.toFixed(2);
+  } else {
+    result.textContent = '—';
+  }
 }
 
-function onCalc1Input() { renderCalculator(); }
-function onCalc2Input() { renderCalculator(); }
-
-// 初始化计算器页
-document.addEventListener('DOMContentLoaded', () => {
-  // 首页搜索
-  const searchInput = document.getElementById('search-input');
-  if (searchInput) searchInput.addEventListener('input', onSearch);
-
-  // 注册 Service Worker
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js');
+// 计算器2：毛利率
+function onCalc2Input() {
+  const price = parseFloat(document.getElementById('calc2-price')?.value) || 0;
+  const cost = parseFloat(document.getElementById('calc2-cost')?.value) || 0;
+  const result = document.getElementById('calc2-result');
+  if (price > 0 && cost >= 0) {
+    const margin = ((price - cost) / price) * 100;
+    result.textContent = margin.toFixed(1) + '%';
+    result.style.color = margin >= 60 ? '#16a34a' : margin < 40 ? '#dc2626' : '#2563EB';
+  } else {
+    result.textContent = '—';
+    result.style.color = '#2563EB';
   }
-});
+}
 
-// ============ 页面加载 ============
-switchTab('home');
+// ============ 初始化 ============
+document.addEventListener('DOMContentLoaded', function() {
+  switchTab('home');
+});
