@@ -1,14 +1,14 @@
 const CACHE_NAME = 'kitchen-calc-v1';
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/css/style.css',
-  '/js/types.js',
-  '/js/storage.js',
-  '/js/app.js',
-  '/manifest.json',
-  '/icon-192.png',
-  '/icon-512.png'
+  './',
+  './index.html',
+  './css/style.css',
+  './js/types.js',
+  './js/storage.js',
+  './js/app.js',
+  './manifest.json',
+  './icon-192.png',
+  './icon-512.png'
 ];
 
 self.addEventListener('install', event => {
