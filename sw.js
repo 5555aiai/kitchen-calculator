@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kitchen-calc-v3';
+const CACHE_NAME = 'kitchen-calc-v4';
 const urlsToCache = [
   './',
   './index.html',

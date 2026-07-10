@@ -24,8 +24,16 @@ function addDish(dish) {
   return dishes;
 }
 
-function updateDish(id, dish) {
+function updateDish(idOrDish, dishData) {
   const dishes = loadAll();
+  let id, dish;
+  if (arguments.length === 1) {
+    dish = idOrDish;
+    id = dish.id;
+  } else {
+    id = idOrDish;
+    dish = dishData;
+  }
   const idx = dishes.findIndex(d => d.id === id);
   if (idx !== -1) {
     dishes[idx] = dish;
