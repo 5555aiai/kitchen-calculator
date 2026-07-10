@@ -166,67 +166,9 @@ function renderAddPage() {
   } else {
     ingredients = [{ name: '', weight: '', price: '', unit: 'jin', yieldRate: 100 }];
   }
+  window._ingredients = ingredients;
 
   let sellingPrice = dish ? dish.sellingPrice : '';
-  let totalCost = 0;
-
-  // 计算总成本
-  ingredients.forEach(ing => {
-    const w = parseFloat(ing.weight) || 0;
-    const p = parseFloat(ing.price) || 0;
-    const y = parseFloat(ing.yieldRate) || 100;
-    if (ing.unit === 'jin') {
-      totalCost += (p * w / 500) / (y / 100);
-    } else {
-      totalCost += (p * w / 1000) / (y / 100);
-    }
-  });
-
-  const sp = parseFloat(sellingPrice) || 0;
-  const profitRate = sp > 0 ? ((sp - totalCost) / sp) * 100 : 0;
-  const pc = profitRate >= 60 ? '#10B981' : profitRate >= 40 ? '#F59E0B' : '#EF4444';
-
-  function renderIngredientRow(ing, index) {
-    const i = index === -1 ? ingredients.length - 1 : index;
-    const ingData = ingredients[i];
-    const w = parseFloat(ingData.weight) || 0;
-    const p = parseFloat(ingData.price) || 0;
-    const y = parseFloat(ingData.yieldRate) || 100;
-    let subtotal = 0;
-    if (ingData.unit === 'jin') subtotal = (p * w / 500) / (y / 100);
-    else subtotal = (p * w / 1000) / (y / 100);
-
-    return `
-      <div class="ing-card" data-index="${i}">
-        <div class="ing-field">
-          <label class="ing-label">材料名</label>
-          <input class="ing-input" placeholder="例：五花肉" value="${escapeHtml(ingData.name || '')}" oninput="updateIng(${i},'name',this.value)">
-        </div>
-        <div class="ing-field">
-          <label class="ing-label">克重（g）</label>
-          <input class="ing-input" type="number" placeholder="250" value="${ingData.weight || ''}" oninput="updateIng(${i},'weight',this.value)">
-        </div>
-        <div class="ing-field">
-          <label class="ing-label">进货价</label>
-          <div class="ing-price-row">
-            <input class="ing-input flex-1" type="number" step="0.01" placeholder="28" value="${ingData.price || ''}" oninput="updateIng(${i},'price',this.value)">
-            <button class="ing-unit-btn" onclick="toggleUnit(${i})">${ingData.unit === 'jin' ? '元/斤' : '元/kg'} ▼</button>
-          </div>
-        </div>
-        <div class="ing-field">
-          <label class="ing-label">出成率（%）</label>
-          <input class="ing-input" type="number" placeholder="100" value="${ingData.yieldRate || ''}" oninput="updateIng(${i},'yieldRate',this.value)">
-        </div>
-        <div class="ing-card-footer">
-          <span class="ing-subtotal">小计成本：¥${subtotal.toFixed(2)}</span>
-          <button class="ing-delete" onclick="removeIngredientRow(${i})">✕</button>
-        </div>
-      </div>
-    `;
-  }
-
-  // 保存到全局以便更新
-  window._ingredients = ingredients;
 
   let html = `
     <div class="page-inner">
@@ -249,14 +191,14 @@ function renderAddPage() {
       <div class="section-card">
         <div class="section-title">原材料</div>
         <div class="section-body" id="ingredientsContainer">
-          ${ingredients.map((ing, idx) => renderIngredientRow(ing, idx)).join('')}
+          ${ingredients.map((ing, idx) => renderIngredientCard(ing, idx)).join('')}
         </div>
         <div class="add-ing-btn-wrap">
-          <button class="add-ing-btn" onclick="addIngredientRow()">＋ 添加材料</button>
+          <button class="add-ing-btn" data-action="addIngredient">＋ 添加材料</button>
         </div>
         <div class="total-cost-row">
           <span class="total-cost-label">单份总成本</span>
-          <span class="total-cost-value">¥${totalCost.toFixed(2)}</span>
+          <span class="total-cost-value">¥0.00</span>
         </div>
       </div>
 
@@ -266,16 +208,16 @@ function renderAddPage() {
         <div class="section-body">
           <div class="form-field">
             <label class="ing-label">售价（元）</label>
-            <input class="ing-input" id="sellingPrice" type="number" step="0.01" placeholder="58" value="${sellingPrice || ''}" oninput="renderAddPage()">
+            <input class="ing-input" id="sellingPrice" type="number" step="0.01" placeholder="58" value="${sellingPrice || ''}">
           </div>
-          <div class="profit-display" style="background:${pc}15;border-left:4px solid ${pc}">
+          <div class="profit-display" style="background:#10B98115;border-left:4px solid #10B981">
             <div class="profit-row">
               <span>单份成本</span>
-              <span style="font-weight:600">¥${totalCost.toFixed(2)}</span>
+              <span style="font-weight:600">¥0.00</span>
             </div>
             <div class="profit-row">
               <span>毛利率</span>
-              <span style="font-weight:700;font-size:20px;color:${pc}">${profitRate.toFixed(1)}%</span>
+              <span style="font-weight:700;font-size:20px;color:#10B981">0.0%</span>
             </div>
           </div>
         </div>
@@ -289,40 +231,177 @@ function renderAddPage() {
   `;
 
   container.innerHTML = html;
+
+  // 更新成本显示
+  updateAddPageCosts();
 }
 
-// ============ 材料操作 ============
-function updateIng(index, field, value) {
-  const ings = window._ingredients;
-  if (ings && ings[index]) {
-    ings[index][field] = value;
-  }
-  renderAddPage();
+// ============ 原材料卡片渲染（无oninput，使用data属性） ============
+function renderIngredientCard(ing, index) {
+  const w = parseFloat(ing.weight) || 0;
+  const p = parseFloat(ing.price) || 0;
+  const y = parseFloat(ing.yieldRate) || 100;
+  let subtotal = 0;
+  if (ing.unit === 'jin') subtotal = (p * w / 500) / (y / 100);
+  else subtotal = (p * w / 1000) / (y / 100);
+
+  return `
+    <div class="ing-card" data-index="${index}">
+      <div class="ing-field">
+        <label class="ing-label">材料名</label>
+        <input class="ing-input" data-index="${index}" data-field="name" placeholder="例：五花肉" value="${escapeHtml(ing.name || '')}">
+      </div>
+      <div class="ing-field">
+        <label class="ing-label">克重（g）</label>
+        <input class="ing-input" data-index="${index}" data-field="weight" type="number" placeholder="250" value="${ing.weight || ''}">
+      </div>
+      <div class="ing-field">
+        <label class="ing-label">进货价</label>
+        <div class="ing-price-row">
+          <input class="ing-input flex-1" data-index="${index}" data-field="price" type="number" step="0.01" placeholder="28" value="${ing.price || ''}">
+          <button class="ing-unit-btn" data-action="toggleUnit" data-index="${index}">${ing.unit === 'jin' ? '元/斤' : '元/kg'} ▼</button>
+        </div>
+      </div>
+      <div class="ing-field">
+        <label class="ing-label">出成率（%）</label>
+        <input class="ing-input" data-index="${index}" data-field="yieldRate" type="number" placeholder="100" value="${ing.yieldRate || ''}">
+      </div>
+      <div class="ing-card-footer">
+        <span class="ing-subtotal">小计成本：¥${subtotal.toFixed(2)}</span>
+        <button class="ing-delete" data-action="deleteIngredient" data-index="${index}">✕</button>
+      </div>
+    </div>
+  `;
 }
 
-function toggleUnit(index) {
-  const ings = window._ingredients;
-  if (ings && ings[index]) {
-    ings[index].unit = ings[index].unit === 'jin' ? 'kg' : 'jin';
+// ============ 仅更新成本/利润显示（不重建DOM） ============
+function updateAddPageCosts() {
+  const ings = window._ingredients || [];
+  let totalCost = 0;
+
+  ings.forEach(ing => {
+    const w = parseFloat(ing.weight) || 0;
+    const p = parseFloat(ing.price) || 0;
+    const y = parseFloat(ing.yieldRate) || 100;
+    if (ing.unit === 'jin') {
+      totalCost += (p * w / 500) / (y / 100);
+    } else {
+      totalCost += (p * w / 1000) / (y / 100);
+    }
+  });
+
+  // 更新每行小计
+  document.querySelectorAll('.ing-card').forEach(card => {
+    const idx = parseInt(card.dataset.index);
+    const ing = ings[idx];
+    if (!ing) return;
+    const w = parseFloat(ing.weight) || 0;
+    const p = parseFloat(ing.price) || 0;
+    const y = parseFloat(ing.yieldRate) || 100;
+    let subtotal = 0;
+    if (ing.unit === 'jin') subtotal = (p * w / 500) / (y / 100);
+    else subtotal = (p * w / 1000) / (y / 100);
+    const el = card.querySelector('.ing-subtotal');
+    if (el) el.textContent = `小计成本：¥${subtotal.toFixed(2)}`;
+  });
+
+  // 更新总成本
+  const totalEl = document.querySelector('.total-cost-value');
+  if (totalEl) totalEl.textContent = `¥${totalCost.toFixed(2)}`;
+
+  // 更新利润显示
+  const sp = parseFloat(document.getElementById('sellingPrice')?.value) || 0;
+  const profitRate = sp > 0 ? ((sp - totalCost) / sp) * 100 : 0;
+  const pc = profitRate >= 60 ? '#10B981' : profitRate >= 40 ? '#F59E0B' : '#EF4444';
+
+  const profitDisplay = document.querySelector('.profit-display');
+  if (profitDisplay) {
+    profitDisplay.style.background = `${pc}15`;
+    profitDisplay.style.borderLeft = `4px solid ${pc}`;
+    const rows = profitDisplay.querySelectorAll('.profit-row');
+    if (rows[0]) rows[0].innerHTML = `<span>单份成本</span><span style="font-weight:600">¥${totalCost.toFixed(2)}</span>`;
+    if (rows[1]) rows[1].innerHTML = `<span>毛利率</span><span style="font-weight:700;font-size:20px;color:${pc}">${profitRate.toFixed(1)}%</span>`;
   }
-  renderAddPage();
 }
 
-function addIngredientRow() {
-  const ings = window._ingredients;
-  if (ings) {
-    ings.push({ name: '', weight: '', price: '', unit: 'jin', yieldRate: 100 });
-  }
-  renderAddPage();
+// ============ 仅重新渲染原材料区域（添加/删除/切换单位时） ============
+function renderIngredientsSection() {
+  const container = document.getElementById('ingredientsContainer');
+  if (!container) return;
+  const ings = window._ingredients || [];
+  container.innerHTML = ings.map((ing, idx) => renderIngredientCard(ing, idx)).join('');
+  updateAddPageCosts();
 }
 
-function removeIngredientRow(index) {
-  const ings = window._ingredients;
-  if (ings && ings.length > 1) {
-    ings.splice(index, 1);
-  }
-  renderAddPage();
+// ============ 事件委托（录入页输入/点击，不重建DOM） ============
+function setupAddPageHandlers() {
+  const container = document.getElementById('pageAdd');
+  if (!container || container._handlersSetup) return;
+  container._handlersSetup = true;
+
+  // 输入事件委托：材料输入 + 售价输入
+  container.addEventListener('input', function(e) {
+    const input = e.target.closest('.ing-input');
+    if (!input) return;
+
+    const index = input.dataset.index;
+    const field = input.dataset.field;
+
+    if (index !== undefined && field) {
+      // 原材料输入：更新数据，只更新成本显示
+      const ings = window._ingredients;
+      if (ings && ings[index]) {
+        ings[index][field] = input.value;
+      }
+      updateAddPageCosts();
+    } else if (input.id === 'sellingPrice') {
+      // 售价输入：只更新利润显示
+      updateAddPageCosts();
+    }
+  });
+
+  // 点击事件委托：单位切换、删除材料、添加材料
+  container.addEventListener('click', function(e) {
+    const btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    const action = btn.dataset.action;
+    const index = parseInt(btn.dataset.index);
+
+    if (action === 'toggleUnit' && !isNaN(index)) {
+      const ings = window._ingredients;
+      if (ings && ings[index]) {
+        ings[index].unit = ings[index].unit === 'jin' ? 'kg' : 'jin';
+      }
+      renderIngredientsSection();
+    } else if (action === 'deleteIngredient' && !isNaN(index)) {
+      const ings = window._ingredients;
+      if (ings && ings.length > 1) {
+        ings.splice(index, 1);
+      }
+      renderIngredientsSection();
+    } else if (action === 'addIngredient') {
+      const ings = window._ingredients;
+      if (ings) {
+        ings.push({ name: '', weight: '', price: '', unit: 'jin', yieldRate: 100 });
+      }
+      renderIngredientsSection();
+    }
+  });
 }
+
+// 在页面加载和切换Tab时设置事件委托
+document.addEventListener('DOMContentLoaded', () => {
+  setupAddPageHandlers();
+});
+// 切换Tab时也重新设置（因为DOM被重建了）
+const origSwitchTab = switchTab;
+switchTab = function(tab) {
+  origSwitchTab(tab);
+  if (tab === 'add') {
+    // 延迟执行，等DOM渲染完成
+    setTimeout(setupAddPageHandlers, 0);
+  }
+};
 
 // ============ 保存 ============
 function handleSave() {
