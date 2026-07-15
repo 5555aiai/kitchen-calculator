@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#2563EB">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="后厨计算器">
+  <title>后厨计算器</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body { background: #F5F7FA; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", Arial, sans-serif; color: #333; line-height: 1.5; padding-bottom: 56px; padding-top: 50px; min-height: 100vh; overflow-x: hidden; }
+    .top-nav { position: fixed; top: 0; left: 0; right: 0; height: 50px; background: #2563EB; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 600; z-index: 100; box-shadow: 0 2px 4px rgba(37,99,235,0.2); }
+    .tab-bar { position: fixed; bottom: 0; left: 0; right: 0; height: 56px; background: #fff; border-top: 1px solid #E5E7EB; display: flex; align-items: center; justify-content: space-around; z-index: 100; padding-bottom: env(safe-area-inset-bottom, 0); }
+    .tab-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; border: none; background: transparent; cursor: pointer; outline: none; padding: 4px 0; }
+    .tab-icon { font-size: 22px; line-height: 1.2; }
+    .tab-label { font-size: 12px; color: #999; margin-top: 2px; }
+    .tab-item.active .tab-label { color: #2563EB; font-weight: 600; }
+    .page { display: none; min-height: calc(100vh - 106px); }
+    .page.active { display: block; }
+    .page-content { padding: 16px; max-width: 480px; margin: 0 auto; }
+    .toast { position: fixed; top: 60px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: #fff; padding: 10px 24px; border-radius: 8px; font-size: 14px; z-index: 999; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+    .toast.show { opacity: 1; }
+    .card { background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); padding: 16px; margin-bottom: 12px; }
+    .card-title { font-size: 16px; font-weight: 600; color: #333; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid #F3F4F6; }
+    .input-group { margin-bottom: 12px; }
+    .input-label { font-size: 14px; color: #666; margin-bottom: 6px; display: block; }
+    .input-wrapper { position: relative; }
+    .input-field { width: 100%; height: 48px; background: #fff; border: 1px solid #E5E7EB; border-radius: 8px; padding: 0 14px; font-size: 16px; color: #333; outline: none; transition: border-color 0.2s, box-shadow 0.2s; }
+    .input-field:focus { border-color: #2563EB; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+    .input-field::placeholder { color: #B0B0B0; }
+    .btn-primary { width: 100%; height: 50px; background: #2563EB; color: #fff; border: none; border-radius: 8px; font-size: 18px; font-weight: 600; cursor: pointer; outline: none; display: flex; align-items: center; justify-content: center; gap: 6px; transition: background 0.2s; }
+    .btn-primary:active { background: #1D4ED8; }
+    .btn-small { background: transparent; border: 1px solid #E5E7EB; border-radius: 6px; padding: 6px 12px; font-size: 13px; color: #666; cursor: pointer; outline: none; transition: all 0.2s; }
+    .btn-small:active { background: #F3F4F6; }
+    .btn-small.btn-danger { color: #EF4444; border-color: #FEE2E2; }
+    .btn-small.btn-danger:active { background: #FEF2F2; }
+    .search-bar { position: relative; margin-bottom: 12px; }
+    .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 16px; color: #999; pointer-events: none; }
+    .search-input { width: 100%; height: 44px; background: #fff; border: 1px solid #E5E7EB; border-radius: 8px; padding: 0 14px 0 38px; font-size: 15px; color: #333; outline: none; transition: border-color 0.2s; }
+    .search-input:focus { border-color: #2563EB; }
+    .stats-row { display: flex; gap: 10px; margin-bottom: 12px; }
+    .stat-card { flex: 1; background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); padding: 14px 10px; text-align: center; }
+    .stat-value { font-size: 24px; font-weight: 700; color: #2563EB; line-height: 1.3; }
+    .stat-label { font-size: 12px; color: #999; margin-top: 4px; }
+    .filter-bar { background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); padding: 12px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .filter-select { height: 36px; border: 1px solid #E5E7EB; border-radius: 8px; padding: 0 10px; font-size: 14px; color: #333; background: #fff; outline: none; flex: 1; min-width: 100px; }
+    .filter-price { width: 70px; height: 36px; border: 1px solid #E5E7EB; border-radius: 8px; padding: 0 8px; font-size: 14px; color: #333; outline: none; }
+    .filter-price:focus { border-color: #2563EB; }
+    .dish-card { background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); padding: 14px 16px; margin-bottom: 10px; cursor: pointer; transition: transform 0.1s; }
+    .dish-card:active { transform: scale(0.98); }
+    .dish-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .dish-name { font-size: 16px; font-weight: 600; color: #333; }
+    .dish-spec { font-size: 12px; color: #999; margin-left: 6px; }
+    .dish-margin-badge { font-size: 14px; font-weight: 700; padding: 3px 10px; border-radius: 12px; white-space: nowrap; }
+    .margin-high { color: #059669; background: #ECFDF5; }
+    .margin-mid { color: #D97706; background: #FFFBEB; }
+    .margin-low { color: #DC2626; background: #FEF2F2; }
+    .dish-card-body { display: flex; justify-content: space-between; font-size: 14px; color: #666; }
+    .dish-card-body span { display: flex; align-items: center; gap: 4px; }
+    .empty-state { text-align: center; padding: 60px 20px; color: #999; }
+    .empty-icon { font-size: 48px; margin-bottom: 12px; }
+    .empty-text { font-size: 15px; }
+    .section-card { background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); padding: 16px; margin-bottom: 12px; }
+    .section-title { font-size: 16px; font-weight: 600; color: #333; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid #F3F4F6; }
+    .ing-card { background: #F9FAFB; border-radius: 10px; padding: 14px; margin-bottom: 12px; position: relative; }
+    .ing-field { margin-bottom: 10px; }
+    .ing-label { font-size: 13px; color: #666; margin-bottom: 4px; display: block; }
+    .ing-input { width: 100%; height: 44px; background: #fff; border: 1px solid #E5E7EB; border-radius: 8px; padding: 0 12px; font-size: 15px; color: #333; outline: none; transition: border-color 0.2s; }
+    .ing-input:focus { border-color: #2563EB; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+    .ing-price-row { display: flex; gap: 8px; align-items: flex-start; }
+    .ing-price-row .ing-input { flex: 1; }
+    .ing-unit-btn { height: 44px; min-width: 80px; background: #fff; border: 1px solid #E5E7EB; border-radius: 8px; font-size: 14px; color: #666; cursor: pointer; outline: none; display: flex; align-items: center; justify-content: center; gap: 4px; transition: all 0.2s; flex-shrink: 0; }
+    .ing-unit-btn:active { background: #F3F4F6; }
+    .ing-unit-btn .arrow { font-size: 10px; color: #999; }
+    .ing-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; padding-top: 8px; border-top: 1px solid #E5E7EB; }
+    .ing-subtotal { font-size: 14px; color: #666; }
+    .ing-subtotal strong { color: #2563EB; font-weight: 600; }
+    .ing-delete { background: transparent; border: none; font-size: 18px; color: #CCC; cursor: pointer; padding: 4px 8px; border-radius: 6px; transition: all 0.2s; }
+    .ing-delete:active { color: #EF4444; background: #FEF2F2; }
+    .add-ing-btn { width: 100%; height: 44px; background: transparent; border: 1px dashed #D1D5DB; border-radius: 8px; font-size: 15px; color: #666; cursor: pointer; outline: none; display: flex; align-items: center; justify-content: center; gap: 4px; transition: all 0.2s; margin-top: 4px; }
+    .add-ing-btn:active { border-color: #2563EB; color: #2563EB; background: #EFF6FF; }
+    .total-cost { font-size: 20px; font-weight: 700; color: #2563EB; text-align: right; padding-top: 12px; margin-top: 12px; border-top: 2px solid #E5E7EB; }
+    .profit-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; }
+    .profit-label { font-size: 15px; color: #666; }
+    .profit-value { font-size: 18px; font-weight: 700; color: #333; }
+    .profit-margin { font-size: 22px; font-weight: 700; }
+    .profit-margin.margin-high { color: #059669; }
+    .profit-margin.margin-mid { color: #D97706; }
+    .profit-margin.margin-low { color: #DC2626; }
+    .calc-card { background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); padding: 16px; margin-bottom: 16px; }
+    .calc-title { font-size: 16px; font-weight: 600; color: #333; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid #F3F4F6; }
+    .calc-field { margin-bottom: 12px; }
+    .calc-label { font-size: 14px; color: #666; margin-bottom: 6px; display: block; }
+    .calc-input { width: 100%; height: 48px; background: #fff; border: 1px solid #E5E7EB; border-radius: 8px; padding: 0 14px; font-size: 16px; color: #333; outline: none; transition: border-color 0.2s; }
+    .calc-input:focus { border-color: #2563EB; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+    .calc-result { background: #EFF6FF; border-radius: 8px; padding: 12px 14px; font-size: 16px; color: #666; margin-top: 8px; text-align: center; }
+    .calc-result strong { font-size: 22px; font-weight: 700; color: #2563EB; margin-left: 4px; }
+  </style>
+</head>
+<body>
+  <div id="toast" class="toast"></div>
+  <div class="top-nav" id="pageTitle">🏠 首页</div>
+
+  <div id="pageHome" class="page active">
+    <div class="page-content" id="home-content"></div>
+  </div>
+
+  <div id="pageAdd" class="page">
+    <div class="page-content" id="add-page-content"></div>
+  </div>
+
+  <div id="pageCalc" class="page">
+    <div class="page-content" id="calc-content"></div>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-item active" data-tab="home" onclick="switchTab('home')">
+      <span class="tab-icon">🏠</span>
+      <span class="tab-label">首页</span>
+    </button>
+    <button class="tab-item" data-tab="add" onclick="switchTab('add')">
+      <span class="tab-icon">📝</span>
+      <span class="tab-label">录入</span>
+    </button>
+    <button class="tab-item" data-tab="calc" onclick="switchTab('calc')">
+      <span class="tab-icon">🧮</span>
+      <span class="tab-label">计算器</span>
+    </button>
+  </div>
+
+  <script>
+    // ============ 数据存储 ============
+    const STORAGE_KEY = 'kitchen_dishes';
+    function loadAll() { try { const raw = localStorage.getItem(STORAGE_KEY); if (!raw) return []; const data = JSON.parse(raw); return Array.isArray(data) ? data : []; } catch (e) { return []; } }
+    function saveAll(dishes) { localStorage.setItem(STORAGE_KEY, JSON.stringify(dishes)); }
+    function addDish(dish) { const dishes = loadAll(); dishes.push(dish); saveAll(dishes); return dishes; }
+    function updateDish(idOrDish, dishData) { const dishes = loadAll(); let id, dish; if (arguments.length === 1) { dish = idOrDish; id = dish.id; } else { id = idOrDish; dish = dishData; } const idx = dishes.findIndex(d => d.id === id); if (idx !== -1) { dishes[idx] = dish; saveAll(dishes); } return dishes; }
+    function deleteDish(id) { const dishes = loadAll(); const filtered = dishes.filter(d => d.id !== id); saveAll(filtered); return filtered; }
+    function genId() { return Date.now().toString(36) + Math.random().toString(36).substr(2, 5); }
+
+    // ============ 全局状态 ============
+    let editDishId = null;
+    let currentTab = 'home';
+    let allDishes = [];
+    let sortOrder = 'default';
+    let priceMin = '';
+    let priceMax = '';
+    let searchKeyword = '';
+
+    // ============ 初始化 ============
+    document.addEventListener('DOMContentLoaded', () => { loadData(); switchTab('home'); setupAddPageHandlers(); });
+    function loadData() { const data = loadAll(); allDishes = Array.isArray(data) ? data : []; }
+    function saveData() { saveAll(allDishes); }
+
+    // ============ Tab切换 ============
+    function switchTab(tab) {
+      currentTab = tab;
+      const titleMap = { home: '首页', add: '录入菜品', calc: '计算器' };
+      document.getElementById('pageTitle').textContent = titleMap[tab];
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.getElementById('page' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
+      document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+      document.querySelector(`.tab-item[data-tab="${tab}"]`).classList.add('active');
+      if (tab === 'home') renderHomePage();
+      else if (tab === 'add') renderAddPage();
+      else if (tab === 'calc') renderCalcPage();
+    }
+
+    // ============ Toast ============
+    function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2000); }
+
+    // ============ 首页渲染 ============
+    function renderHomePage() {
+      const container = document.getElementById('home-content');
+      loadData();
+      let filtered = [...allDishes];
+      const kw = searchKeyword.trim().toLowerCase();
+      if (kw) filtered = filtered.filter(d => d.name.toLowerCase().includes(kw));
+      if (sortOrder === 'profit-asc') filtered.sort((a, b) => a.profitRate - b.profitRate);
+      else if (sortOrder === 'profit-desc') filtered.sort((a, b) => b.profitRate - a.profitRate);
+      const min = parseFloat(priceMin) || 0;
+      const max = parseFloat(priceMax) || Infinity;
+      filtered = filtered.filter(d => d.sellingPrice >= min && d.sellingPrice <= max);
+      const total = allDishes.length;
+      const avgProfit = total > 0 ? allDishes.reduce((s, d) => s + d.profitRate, 0) / total : 0;
+      const highProfit = allDishes.filter(d => d.profitRate >= 60).length;
+      const getProfitColor = (rate) => { if (rate >= 60) return '#10B981'; if (rate >= 40) return '#F59E0B'; return '#EF4444'; };
+      const getProfitBg = (rate) => { if (rate >= 60) return '#ECFDF5'; if (rate >= 40) return '#FFFBEB'; return '#FEF2F2'; };
+      let html = `<div class="search-bar"><span class="search-icon">🔍</span><input class="search-input" placeholder="搜索菜品名称..." value="${escapeHtml(searchKeyword)}" oninput="searchKeyword=this.value;renderHomePage()"></div>`;
+      html += `<div class="stats-row"><div class="stat-card"><div class="stat-value">${total}</div><div class="stat-label">菜品总数</div></div><div class="stat-card"><div class="stat-value" style="color:#2563EB">${avgProfit.toFixed(1)}%</div><div class="stat-label">平均毛利率</div></div><div class="stat-card"><div class="stat-value" style="color:#10B981">${highProfit}</div><div class="stat-label">高毛利菜品</div></div></div>`;
+      html += `<div class="filter-bar"><select class="filter-select" onchange="sortOrder=this.value;renderHomePage()"><option value="default" ${sortOrder==='default'?'selected':''}>默认排序</option><option value="profit-desc" ${sortOrder==='profit-desc'?'selected':''}>毛利率从高到低</option><option value="profit-asc" ${sortOrder==='profit-asc'?'selected':''}>毛利率从低到高</option></select><input class="filter-price" type="number" placeholder="最低价" value="${priceMin}" oninput="priceMin=this.value;renderHomePage()"><span style="line-height:36px;color:#999">—</span><input class="filter-price" type="number" placeholder="最高价" value="${priceMax}" oninput="priceMax=this.value;renderHomePage()"></div>`;
+      if (filtered.length === 0) { html += `<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-text">暂无菜品数据</div></div>`; }
+      else { html += `<div class="dish-list">`; filtered.forEach(d => { const pc = getProfitColor(d.profitRate); const pb = getProfitBg(d.profitRate); html += `<div class="dish-card" onclick="editDish('${d.id}')"><div class="dish-card-header"><div><span class="dish-name">${escapeHtml(d.name)}</span><span class="dish-spec">${escapeHtml(d.spec || '')}</span></div><span class="dish-margin-badge" style="background:${pb};color:${pc}">${d.profitRate.toFixed(1)}%</span></div><div class="dish-card-body"><span>成本 ¥${d.totalCost.toFixed(2)}</span><span>售价 ¥${d.sellingPrice.toFixed(2)}</span></div></div>`; }); html += `</div>`; }
+      container.innerHTML = html;
+    }
+
+    // ============ 录入页渲染 ============
+    function renderAddPage() {
+      const container = document.getElementById('add-page-content');
+      const isEdit = editDishId !== null;
+      const dish = isEdit ? allDishes.find(d => d.id === editDishId) : null;
+      let ingredients = [];
+      if (dish && Array.isArray(dish.ingredients)) { ingredients = dish.ingredients.map(ing => ({ ...ing })); }
+      else { ingredients = [{ name: '', weight: '', price: '', unit: 'jin', yieldRate: 100 }]; }
+      window._ingredients = ingredients;
+      let sellingPrice = dish ? dish.sellingPrice : '';
+      let html = `<div class="section-card"><div class="section-title">基本信息</div><div class="input-group"><label class="input-label">菜品名称 *</label><input class="input-field" id="dishName" placeholder="例：红烧肉" value="${escapeHtml(dish ? dish.name : '')}"></div><div class="input-group"><label class="input-label">规格（选填）</label><input class="input-field" id="dishSpec" placeholder="例：大份 / 小份" value="${escapeHtml(dish ? (dish.spec || '') : '')}"></div></div>`;
+      html += `<div class="section-card"><div class="section-title">原材料</div><div id="ingredientsContainer">${ingredients.map((ing, idx) => renderIngredientCard(ing, idx)).join('')}</div><button class="add-ing-btn" data-action="addIngredient">＋ 添加材料</button><div class="total-cost"><span>单份总成本：</span><span class="total-cost-value">¥0.00</span></div></div>`;
+      html += `<div class="section-card"><div class="section-title">售价与利润</div><div class="input-group"><label class="input-label">售价（元）</label><input class="input-field" id="sellingPrice" type="number" step="0.01" placeholder="58" value="${sellingPrice || ''}"></div><div class="profit-display" style="background:#10B98115;border-left:4px solid #10B981;padding:12px;border-radius:8px;margin-top:8px"><div class="profit-row"><span class="profit-label">单份成本</span><span class="profit-value">¥0.00</span></div><div class="profit-row"><span class="profit-label">毛利率</span><span class="profit-margin" style="color:#10B981">0.0%</span></div></div><div style="padding:16px 0 0"><button class="btn-primary" onclick="handleSave()">💾 ${isEdit ? '更新菜品' : '保存菜品'}</button></div></div><div style="height:100px"></div>`;
+      container.innerHTML = html;
+      updateAddPageCosts();
+    }
+
+    function renderIngredientCard(ing, index) {
+      const w = parseFloat(ing.weight) || 0; const p = parseFloat(ing.price) || 0; const y = parseFloat(ing.yieldRate) || 100;
+      let subtotal = 0;
+      if (ing.unit === 'jin') subtotal = (p * w / 500) / (y / 100);
+      else subtotal = (p * w / 1000) / (y / 100);
+      return `<div class="ing-card" data-index="${index}"><div class="ing-field"><label class="ing-label">材料名</label><input class="ing-input" data-index="${index}" data-field="name" placeholder="例：五花肉" value="${escapeHtml(ing.name || '')}"></div><div class="ing-field"><label class="ing-label">克重（g）</label><input class="ing-input" data-index="${index}" data-field="weight" type="number" placeholder="250" value="${ing.weight || ''}"></div><div class="ing-field"><label class="ing-label">进货价</label><div class="ing-price-row"><input class="ing-input" data-index="${index}" data-field="price" type="number" step="0.01" placeholder="28" value="${ing.price || ''}"><button class="ing-unit-btn" data-action="toggleUnit" data-index="${index}">${ing.unit === 'jin' ? '元/斤' : '元/kg'} <span class="arrow">▼</span></button></div></div><div class="ing-field"><label class="ing-label">出成率（%）</label><input class="ing-input" data-index="${index}" data-field="yieldRate" type="number" placeholder="100" value="${ing.yieldRate || ''}"></div><div class="ing-footer"><span class="ing-subtotal">小计成本：<strong>¥${subtotal.toFixed(2)}</strong></span><button class="ing-delete" data-action="deleteIngredient" data-index="${index}">✕</button></div></div>`;
+    }
+
+    function updateAddPageCosts() {
+      const ings = window._ingredients || [];
+      let totalCost = 0;
+      ings.forEach(ing => { const w = parseFloat(ing.weight) || 0; const p = parseFloat(ing.price) || 0; const y = parseFloat(ing.yieldRate) || 100; if (ing.unit === 'jin') totalCost += (p * w / 500) / (y / 100); else totalCost += (p * w / 1000) / (y / 100); });
+      document.querySelectorAll('.ing-card').forEach(card => { const idx = parseInt(card.dataset.index); const ing = ings[idx]; if (!ing) return; const w = parseFloat(ing.weight) || 0; const p = parseFloat(ing.price) || 0; const y = parseFloat(ing.yieldRate) || 100; let subtotal = 0; if (ing.unit === 'jin') subtotal = (p * w / 500) / (y / 100); else subtotal = (p * w / 1000) / (y / 100); const el = card.querySelector('.ing-subtotal'); if (el) el.innerHTML = `小计成本：<strong>¥${subtotal.toFixed(2)}</strong>`; });
+      const totalEl = document.querySelector('.total-cost-value');
+      if (totalEl) totalEl.textContent = `¥${totalCost.toFixed(2)}`;
+      const sp = parseFloat(document.getElementById('sellingPrice')?.value) || 0;
+      const profitRate = sp > 0 ? ((sp - totalCost) / sp) * 100 : 0;
+      const pc = profitRate >= 60 ? '#10B981' : profitRate >= 40 ? '#F59E0B' : '#EF4444';
+      const profitDisplay = document.querySelector('.profit-display');
+      if (profitDisplay) { profitDisplay.style.background = `${pc}15`; profitDisplay.style.borderLeft = `4px solid ${pc}`; const rows = profitDisplay.querySelectorAll('.profit-row'); if (rows[0]) rows[0].innerHTML = `<span class="profit-label">单份成本</span><span class="profit-value">¥${totalCost.toFixed(2)}</span>`; if (rows[1]) rows[1].innerHTML = `<span class="profit-label">毛利率</span><span class="profit-margin" style="color:${pc}">${profitRate.toFixed(1)}%</span>`; }
+    }
+
+    function renderIngredientsSection() {
+      const container = document.getElementById('ingredientsContainer');
+      if (!container) return;
+      const ings = window._ingredients || [];
+      container.innerHTML = ings.map((ing, idx) => renderIngredientCard(ing, idx)).join('');
+      updateAddPageCosts();
+    }
+
+    function setupAddPageHandlers() {
+      const container = document.getElementById('pageAdd');
+      if (!container || container._handlersSetup) return;
+      container._handlersSetup = true;
+      container.addEventListener('input', function(e) { const input = e.target.closest('.ing-input'); if (!input) return; const index = input.dataset.index; const field = input.dataset.field; if (index !== undefined && field) { const ings = window._ingredients; if (ings && ings[index]) ings[index][field] = input.value; updateAddPageCosts(); } else if (input.id === 'sellingPrice') { updateAddPageCosts(); } });
+      container.addEventListener('click', function(e) { const btn = e.target.closest('[data-action]'); if (!btn) return; const action = btn.dataset.action; const index = parseInt(btn.dataset.index); if (action === 'toggleUnit' && !isNaN(index)) { const ings = window._ingredients; if (ings && ings[index]) ings[index].unit = ings[index].unit === 'jin' ? 'kg' : 'jin'; renderIngredientsSection(); } else if (action === 'deleteIngredient' && !isNaN(index)) { const ings = window._ingredients; if (ings && ings.length > 1) ings.splice(index, 1); renderIngredientsSection(); } else if (action === 'addIngredient') { const ings = window._ingredients; if (ings) ings.push({ name: '', weight: '', price: '', unit: 'jin', yieldRate: 100 }); renderIngredientsSection(); } });
+    }
+
+    function handleSave() {
+      const name = document.getElementById('dishName')?.value?.trim();
+      if (!name) { showToast('请输入菜品名称'); return; }
+      const spec = document.getElementById('dishSpec')?.value?.trim() || '';
+      const sellingPrice = parseFloat(document.getElementById('sellingPrice')?.value) || 0;
+      const ings = window._ingredients || [];
+      let totalCost = 0;
+      ings.forEach(ing => { const w = parseFloat(ing.weight) || 0; const p = parseFloat(ing.price) || 0; const y = parseFloat(ing.yieldRate) || 100; if (ing.unit === 'jin') totalCost += (p * w / 500) / (y / 100); else totalCost += (p * w / 1000) / (y / 100); });
+      const profitRate = sellingPrice > 0 ? ((sellingPrice - totalCost) / sellingPrice) * 100 : 0;
+      const dish = { id: editDishId || genId(), name, spec, ingredients: ings, sellingPrice, totalCost, profitRate, createdAt: editDishId ? (allDishes.find(d => d.id === editDishId)?.createdAt || Date.now()) : Date.now() };
+      if (editDishId) updateDish(dish); else addDish(dish);
+      loadData(); editDishId = null; showToast('保存成功！'); switchTab('home');
+    }
+
+    function editDish(id) { editDishId = id; switchTab('add'); }
+
+    // ============ 计算器页 ============
+    function renderCalcPage() {
+      const container = document.getElementById('calc-content');
+      container.innerHTML = `<div class="calc-card"><div class="calc-title">🧮 出成率换算</div><div class="calc-field"><label class="calc-label">原材料价格（元/斤）</label><input class="calc-input" id="calc1-price" type="number" step="0.01" min="0" placeholder="如：25" oninput="onCalc1Input()"></div><div class="calc-field"><label class="calc-label">需要克重（g）</label><input class="calc-input" id="calc1-weight" type="number" step="0.1" min="0" placeholder="如：300" oninput="onCalc1Input()"></div><div class="calc-field"><label class="calc-label">出成率（%）</label><input class="calc-input" id="calc1-yield" type="number" step="0.1" min="0" max="100" placeholder="默认100" value="100" oninput="onCalc1Input()"></div><div class="calc-result">实际成本：<strong id="calc1-result">—</strong></div></div><div class="calc-card"><div class="calc-title">📊 毛利率计算</div><div class="calc-field"><label class="calc-label">售价（元）</label><input class="calc-input" id="calc2-price" type="number" step="0.01" min="0" placeholder="如：68" oninput="onCalc2Input()"></div><div class="calc-field"><label class="calc-label">单份成本（元）</label><input class="calc-input" id="calc2-cost" type="number" step="0.01" min="0" placeholder="如：25" oninput="onCalc2Input()"></div><div class="calc-result">毛利率：<strong id="calc2-result">—</strong></div></div>`;
+    }
+
+    function onCalc1Input() { const price = parseFloat(document.getElementById('calc1-price')?.value) || 0; const weight = parseFloat(document.getElementById('calc1-weight')?.value) || 0; const yieldRate = parseFloat(document.getElementById('calc1-yield')?.value) || 100; const result = (price * weight / 500) / (yieldRate / 100); const el = document.getElementById('calc1-result'); if (el) el.textContent = result > 0 ? `¥${result.toFixed(2)}` : '—'; }
+    function onCalc2Input() { const price = parseFloat(document.getElementById('calc2-price')?.value) || 0; const cost = parseFloat(document.getElementById('calc2-cost')?.value) || 0; const rate = price > 0 ? ((price - cost) / price) * 100 : 0; const el = document.getElementById('calc2-result'); if (el) { el.textContent = price > 0 ? `${rate.toFixed(1)}%` : '—'; el.style.color = rate >= 60 ? '#10B981' : rate >= 40 ? '#F59E0B' : '#EF4444'; } }
+
+    // ============ 工具函数 ============
+    function escapeHtml(str) { if (!str) return ''; return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  </script>
+</body>
+</html>
